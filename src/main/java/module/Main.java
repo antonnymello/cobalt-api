@@ -1,5 +1,6 @@
 package module;
 
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
@@ -12,13 +13,14 @@ import it.auties.whatsapp.model.contact.ContactJid;
 import it.auties.whatsapp.model.contact.ContactJidProvider;
 import it.auties.whatsapp.model.message.button.ListMessage;
 import it.auties.whatsapp.model.message.button.ListMessage.Type;
+import it.auties.whatsapp.model.message.standard.AudioMessage;
 
 public class Main {
     public static void main(String[] args) {
         System.out.println("Initializing WhatsApp API...");
 
         Whatsapp app = Whatsapp.webBuilder()
-                .newConnection()
+                .lastConnection()
                 .name("WhatsappAPI")
                 .autodetectListeners(true)
                 .acknowledgeMessages(false)
@@ -30,15 +32,30 @@ public class Main {
         System.out.println("Waiting to send message to establish connection...");
 
         try {
-            Thread.sleep(30000);
+            Thread.sleep(2000);
             List<String> contacts = getContacts();
             System.err.println("Sending message to " + contacts.size() + " contacts");
 
             for (String contact : contacts) {
                 System.out.println("Sending message to " + contact);
                 ContactJidProvider contactJidProvider = ContactJid.of(contact).toJid();
+
+                System.err.println("Sending normal message");
+                app.sendMessage(contactJidProvider, "Hello World");
+                Thread.sleep(500);
+
+                System.err.println("Sending audio message");
+                byte[] audio = new URL("https://dl.espressif.com/dl/audio/ff-16b-2c-44100hz.mp4")
+                        .openStream()
+                        .readAllBytes();
+                AudioMessage audioMessage = AudioMessage.simpleBuilder().media(audio).build();
+                app.sendMessage(contactJidProvider, audioMessage);
+                Thread.sleep(500);
+
+                System.err.println("Sending list message");
                 ListMessage listMessage = createOptionsList();
                 app.sendMessage(contactJidProvider, listMessage);
+
                 System.err.println("Waiting 2 seconds to send message to next contact");
                 Thread.sleep(2000);
             }
@@ -51,14 +68,14 @@ public class Main {
 
     private static ListMessage createOptionsList() {
         List<ButtonRow> buttons = createOptions();
-        ButtonSection section = createSection("Options", buttons);
-        ListMessage listMessage = ListMessage.builder()
-                .sections(List.of(section))
-                .title("Opções")
-                .description("Escolha uma das opções abaixo")
+        ButtonSection firstSection = createSection("Options", buttons);
+        ButtonSection secondSection = createSection("Options 2", buttons);
+        return ListMessage.builder()
+                .sections(List.of(firstSection, secondSection))
+                .title("Options list")
+                .description("Select a single option")
                 .listType(Type.SINGLE_SELECT)
                 .build();
-        return listMessage;
     }
 
     private static List<String> getContacts() {

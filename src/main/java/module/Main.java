@@ -4,7 +4,6 @@ import java.nio.file.Paths;
 
 import it.auties.whatsapp.api.QrHandler;
 import it.auties.whatsapp.api.TextPreviewSetting;
-import it.auties.whatsapp.api.WebHistoryLength;
 import it.auties.whatsapp.api.Whatsapp;
 
 public class Main {
@@ -17,7 +16,7 @@ public class Main {
                 .autodetectListeners(true)
                 .textPreviewSetting(TextPreviewSetting.ENABLED)
                 .checkPatchMacks(true)
-                .unregistered(QrHandler.toTerminal())
+                .unregistered(QrHandler.toFile(Paths.get("qr.png"), QrHandler.ToFileConsumer.toTerminal()))
                 .connectAwaitingLogout().join();
     }
 }
